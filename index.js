@@ -1,6 +1,6 @@
 const express = require('express')
 const server = express()
-//use server
+server.use(express.json())
 
 const mongoose = require('mongoose')
 const koder = require('./koderModel')
@@ -12,60 +12,7 @@ const DB_NAME       = 'kodemia'
 
 const url = `mongodb+srv://${DB_USER}:${DB_PASSWORD}@${DB_HOST}/${DB_NAME}`
 
-server.get('/koders', async (request,response) => {
-
-    allKoders= await koder.find({
-
-    })
-
-    response.json({
-        message: 'all coders',
-        success: true,
-        data:{
-            koders: allKoders
-        }
-
-    })
-
-})
-
-mongoose.connect( url , { useNewUrlParser: true, useUnifiedTopology: true })
-.then((conn)=>{
-    //aqui ya estamos conectados a la DB
-    server.listen(8080,()=>{
-        console.log('Server listening')
-    })
-    console.log('DB connected :D: ', conn)
-    
-    /*koder.find({gender:'f'})  //Para hacer una consulta se hace a partir del modelo
-        .then((kodersFound)=>{
-            console.log('kodersFound: ',kodersFound)
-        })
-        .catch((error)=>{
-            console.log('Error: ', error)
-        })
-    */
-    /*koder.create({
-        name: 'Mario',
-        lastname: 'Andrade',
-        age: 21,
-        gender: 'm'
-    })
-        .then((koderCreated)=>{
-            console.log('kodersCreated: ',koderCreated)
-        })
-        .catch((error)=>{
-            console.log('Error: ', error)
-        })    */
-})
-.catch((error)=>{
-    console.log('Error :( :', error)
-
-})
-
 /*Practica
-
-
 -GET /koders
   -gender   <-filtrado por queryparam
 
@@ -75,3 +22,71 @@ mongoose.connect( url , { useNewUrlParser: true, useUnifiedTopology: true })
    -age
    -gender
 */   
+
+server.get('/koders', async (request,response) => {
+    const genderFilter = request.query.gender
+    let findObject = {}
+    let message    = 'All koders'
+
+    if(genderFilter){
+        findObject = { 
+            gender: genderFilter
+        }
+        message = 'Koders found by gender'
+    }
+
+    allKoders= await koder.find(findObject)
+    response.json({
+        message: message,
+        success: true,
+        data:{
+            koders: allKoders
+        }
+    })
+
+})
+
+server.post('/koders', async (request,response) => {
+
+    const name      = request.body.name
+    const lastname  = request.body.lastname
+    const age       = request.body.age
+    const gender    = request.body.gender
+    let message     = ''
+    let status     = false
+
+    await koder.create({
+        name: name,
+        lastname: lastname,
+        age: age,
+        gender: gender
+    })
+        .then((koderCreated)=>{
+            message = 'User Created :D  --->' + koderCreated
+            status = true
+        })
+        .catch((error)=>{    
+            message = 'Error :(  --->' + error
+            status = false
+        }) 
+    
+    response.json({
+        message: message,
+        success: status,
+    })
+
+})
+
+mongoose.connect( url , { useNewUrlParser: true, useUnifiedTopology: true })
+.then((conn)=>{
+    
+    server.listen(8080,()=>{
+        console.log('Server listening')
+    })
+    console.log('DB connected :D: ', conn)
+    
+})
+.catch((error)=>{
+    console.log('Error :( :', error)
+
+})
